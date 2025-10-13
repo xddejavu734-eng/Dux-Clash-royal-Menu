@@ -1,0 +1,199 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+-- Noclip Menu V2
+-- Autor: GZSSF
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local SoundService = game:GetService("SoundService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+-- Variables
+local noclip = false
+local heartbeatConn
+local gui, main, content, noclipBtn
+local minimized = false
+local guiVisible = true
+
+-- Sonido
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://6042053626"
+clickSound.Volume = 1.5
+clickSound.Parent = SoundService
+
+local function playClick()
+	if clickSound.IsPlaying then clickSound:Stop() end
+	clickSound:Play()
+end
+
+-- Funciones Noclip
+local function setNoclip(state)
+	noclip = state
+	if noclip then
+		if noclipBtn then noclipBtn.Text = "🍭 Desactivar Noclip" end
+	else
+		if noclipBtn then noclipBtn.Text = "🍭 Activar Noclip" end
+	end
+	if character then
+		for _,part in ipairs(character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = not noclip
+			end
+		end
+	end
+	if heartbeatConn then heartbeatConn:Disconnect() end
+	if noclip then
+		heartbeatConn = RunService.Heartbeat:Connect(function()
+			if character then
+				for _,part in ipairs(character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.CanCollide = false
+					end
+				end
+			end
+		end)
+	end
+end
+
+-- Función para crear el menú
+local function createMenu()
+	-- Limpiar GUI anterior si existe
+	if gui then gui:Destroy() end
+
+	gui = Instance.new("ScreenGui")
+	gui.ResetOnSpawn = false
+	gui.Parent = player:WaitForChild("PlayerGui")
+
+	main = Instance.new("Frame")
+	main.Size = UDim2.new(0,280,0,120)
+	main.Position = UDim2.new(0.5,-140,0.2,0)
+	main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	main.Active = true
+	main.Draggable = true
+	main.Parent = gui
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
+
+	-- Top bar
+	local top = Instance.new("Frame", main)
+	top.Size = UDim2.new(1,0,0,28)
+	top.BackgroundColor3 = Color3.fromRGB(45,45,45)
+	Instance.new("UICorner", top).CornerRadius = UDim.new(0,10)
+
+	local title = Instance.new("TextLabel", top)
+	title.Text = "🍭 Dux No Clip"
+	title.TextColor3 = Color3.fromRGB(255,255,255)
+	title.TextSize = 16
+	title.Font = Enum.Font.GothamBold
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1,-60,1,0)
+	title.Position = UDim2.new(0,10,0,0)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+
+	local btnMin = Instance.new("TextButton", top)
+	btnMin.Text = "-"
+	btnMin.TextColor3 = Color3.fromRGB(255,255,255)
+	btnMin.Font = Enum.Font.GothamBold
+	btnMin.TextSize = 20
+	btnMin.Size = UDim2.new(0,24,0,24)
+	btnMin.Position = UDim2.new(1,-56,0,2)
+	btnMin.BackgroundTransparency = 1
+
+	local btnClose = Instance.new("TextButton", top)
+	btnClose.Text = "×"
+	btnClose.TextColor3 = Color3.fromRGB(255,255,255)
+	btnClose.Font = Enum.Font.GothamBold
+	btnClose.TextSize = 20
+	btnClose.Size = UDim2.new(0,24,0,24)
+	btnClose.Position = UDim2.new(1,-28,0,2)
+	btnClose.BackgroundTransparency = 1
+
+	-- Contenido
+	content = Instance.new("Frame", main)
+	content.Size = UDim2.new(1,0,1,-28)
+	content.Position = UDim2.new(0,0,0,28)
+	content.BackgroundColor3 = Color3.fromRGB(35,35,35)
+	Instance.new("UICorner", content).CornerRadius = UDim.new(0,10)
+
+	-- Botón Noclip
+	noclipBtn = Instance.new("TextButton", content)
+	noclipBtn.Size = UDim2.new(0.8,0,0,36)
+	noclipBtn.Position = UDim2.new(0.1,0,0,20)
+	noclipBtn.Text = noclip and "🛑 Desactivar Noclip" or "🚪 Activar Noclip"
+	noclipBtn.Font = Enum.Font.GothamBold
+	noclipBtn.TextSize = 16
+	noclipBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	noclipBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	Instance.new("UICorner", noclipBtn).CornerRadius = UDim.new(0,8)
+
+	noclipBtn.MouseButton1Click:Connect(function()
+		playClick()
+		setNoclip(not noclip)
+	end)
+
+	-- Minimizar
+	local function setContentVisible(visible)
+		for _,child in ipairs(content:GetChildren()) do
+			if child:IsA("TextButton") or child:IsA("TextLabel") then
+				child.Visible = visible
+			end
+		end
+	end
+
+	btnMin.MouseButton1Click:Connect(function()
+		playClick()
+		minimized = not minimized
+		setContentVisible(not minimized)
+		local goal = {}
+		goal.Size = minimized and UDim2.new(0,280,0,28) or UDim2.new(0,280,0,120)
+		TweenService:Create(main,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),goal):Play()
+	end)
+
+	-- Cerrar
+	btnClose.MouseButton1Click:Connect(function()
+		playClick()
+		setNoclip(false) -- Desactiva noclip
+		TweenService:Create(main,TweenInfo.new(0.25),{Position = main.Position - UDim2.new(0,0,0,200)}):Play()
+		task.wait(0.25)
+		gui:Destroy()
+	end)
+
+	-- Tecla N para mostrar/ocultar
+	UIS.InputBegan:Connect(function(input,gp)
+		if gp then return end
+		if input.KeyCode==Enum.KeyCode.N then
+			playClick()
+			guiVisible = not guiVisible
+			if main then main.Visible = guiVisible end
+		end
+	end)
+end
+
+-- Crear el menú al inicio
+createMenu()
+
+-- Detectar cuando el personaje muere o reaparece
+player.CharacterAdded:Connect(function(char)
+	character = char
+	task.wait(0.1)
+	StarterGui:SetCore("SendNotification", {
+		Title = "⚠️ Script Restablecido",
+		Text = "Script Restablecido Por Posibles Errores",
+		Duration = 2
+	})
+	createMenu()
+	if noclip then
+		setNoclip(true)
+	end
+end)
+
+-- Mantener noclip si ya estaba activado
+if character then
+	player.CharacterAdded:Wait()
+	setNoclip(noclip)
+end
